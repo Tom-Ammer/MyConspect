@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Мой профиль на GitHub</title>
+  <style>
+    @font-face {
+      font-family: 'CoreMellow-ExtraBold';
+      src: url('CoreMellow-ExtraBold.otf') format('opentype');
+    }
+
+    body {
+      font-family: 'CoreMellow-ExtraBold', Verdana, Arial, Helvetica, sans-serif;
+      padding: 20px;
+      text-align: center;
+      background-color: rgb(179, 243, 243);
+      position: relative;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 24px;
+    }
+
+    .profile-info {
+      margin-top: 20px;
+    }
+
+    .profile-info img {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+    }
+
+    .profile-info p {
+      margin-top: 10px;
+      font-size: 22px;
+      line-height: 1.4;
+    }
+
+    .profile-info a {
+      color: #333;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .profile-info .vk-logo {
+      width: 50px;
+      height: 50px;
+      margin-top: 20px;
+    }
+
+    body::before {
+      content: "";
+      display: block;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 450px;
+      background-image: url('wallpaper.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Мой профиль на GitHub</h1>
+  <div class="profile-info">
+    <img src="https://avatars.githubusercontent.com/Tom-Ammer" alt="Мое фото на GitHub">
+    <p>Привет! Меня зовут Tom Ammer Я активно развиваюсь в мире разработки программного обеспечения и храню свои проекты на GitHub.</p>
+    <p>Вы можете найти мои проекты и подробную информацию о моей деятельности на моей странице на GitHub:</p>
+    <a href="https://github.com/Tom-Ammer">https://github.com/Tom-Ammer</a>
+    <p>Также, вы можете посетить мой профиль ВКонтакте:</p>
+    <a href="https://vk.com/tom_ammer">
+      <img class="vk-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/VK.com-logo.svg/1200px-VK.com-logo.svg.png" alt="Логотип ВКонтакте">
+    </a>
+  </div>
+</body>
+</html>
