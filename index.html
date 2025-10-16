@@ -145,8 +145,25 @@ clearConsoleBtn.addEventListener("click", ()=>{
   localStorage.removeItem("serverLogs");
 });
 
-// Проверка доступности сайта через fetch
-function checkSiteFetch() {
+// Функция fetch с таймаутом
+function fetchWithTimeout(url, timeout) {
+  return new Promise((resolve, reject)=>{
+    const timer = setTimeout(()=>reject(new Error("Таймаут подключения")), timeout);
+    fetch(url)
+      .then(res=>{
+        clearTimeout(timer);
+        if(!res.ok) reject(new Error("Ошибка загрузки: " + res.status));
+        else resolve(res);
+      })
+      .catch(err=>{
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
+// Функция подключения
+function connectToServer() {
   loader.style.display = "block";
   fetchWithTimeout(targetUrl, timeout)
     .then(()=>{
@@ -166,7 +183,7 @@ connectBtn.addEventListener("click", ()=>{
   log("Проверка доступности сайта...");
   loadingDiv.classList.remove("hidden");
   errorDiv.classList.add("hidden");
-  checkSiteFetch();
+  connectToServer();
 });
 
 // Кнопка попробовать снова
@@ -175,7 +192,7 @@ retryBtn.addEventListener("click", ()=>{
   log("Повторная проверка доступности сайта...");
   loadingDiv.classList.remove("hidden");
   errorDiv.classList.add("hidden");
-  checkSiteFetch();
+  connectToServer();
 });
 </script>
 
