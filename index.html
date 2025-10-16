@@ -138,27 +138,21 @@ clearConsoleBtn.addEventListener("click", ()=>{
 });
 
 // Проверка доступности сайта через Image
-function checkSiteAvailability() {
+function checkSiteFetch() {
   loader.style.display = "block";
-  const img = new Image();
-  let timer = setTimeout(()=>{
-    img.src="";
-    log("Сайт недоступен (таймаут)", "error");
-    loadingDiv.classList.add("hidden");
-    errorDiv.classList.remove("hidden");
-  }, timeout);
-  img.onload = ()=>{
-    clearTimeout(timer);
-    log("Сайт доступен", "ok");
-    setTimeout(()=>window.location.href = targetUrl, 3000);
-  };
-  img.onerror = ()=>{
-    clearTimeout(timer);
-    log("Сайт недоступен (ошибка загрузки)", "error");
-    loadingDiv.classList.add("hidden");
-    errorDiv.classList.remove("hidden");
-  };
-  img.src = targetUrl + "/favicon.ico?" + Date.now(); // маленький ресурс для проверки
+  fetch(targetUrl, { method: "GET" })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Ошибка загрузки: " + response.status);
+      }
+      log("Сайт доступен. Код: " + response.status, "ok");
+      setTimeout(() => window.location.href = targetUrl, 3000);
+    })
+    .catch(err => {
+      log("Сайт недоступен: " + err.message, "error");
+      loadingDiv.classList.add("hidden");
+      errorDiv.classList.remove("hidden");
+    });
 }
 
 // Кнопка подключения
