@@ -61,7 +61,6 @@
     }
 
     .loader::after {
-      border: 6px solid transparent;
       border-bottom-color: #8bc34a;
       animation-delay: 0.6s;
     }
@@ -83,9 +82,80 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* Кнопка консоли */
+    #consoleBtn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: background 0.3s;
+      z-index: 1000;
+    }
+
+    #consoleBtn:hover {
+      background: #2176b8;
+    }
+
+    /* Окно консоли */
+    #consoleWindow {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      width: 320px;
+      height: 180px;
+      background: #1e1e1e;
+      color: #dcdcdc;
+      font-family: monospace;
+      font-size: 13px;
+      border-radius: 8px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      padding: 10px;
+      overflow-y: auto;
+      display: none;
+      z-index: 999;
+    }
+
+    #consoleWindow.visible {
+      display: block;
+      animation: fadeInConsole 0.3s ease;
+    }
+
+    @keyframes fadeInConsole {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .log-entry {
+      margin-bottom: 6px;
+      border-left: 3px solid #3498db;
+      padding-left: 6px;
+    }
+
+    .log-error {
+      border-left-color: #e74c3c;
+      color: #ff9e9e;
+    }
+
+    .log-ok {
+      border-left-color: #2ecc71;
+      color: #a6f3b1;
+    }
+
   </style>
 </head>
 <body>
+  <button id="consoleBtn">Консоль</button>
+
+  <div id="consoleWindow"></div>
+
   <div class="container fade-in" id="loading">
     <h1>Проверяем соединение…</h1>
     <div class="loader"></div>
@@ -93,18 +163,36 @@
   </div>
 
   <div class="container hidden fade-in" id="error">
-    <h1>Ошибка 404</h1>
-    <p>Страница не найдена.<br>Обратитесь к администратору.</p>
+    <h1>Ошибка</h1>
+    <p>Страница не найдена или сервер недоступен.<br>Обратитесь к администратору.</p>
   </div>
 
   <script>
     const targetUrl = "http://172.24.240.1:6808";
     const timeout = 5000;
+    const consoleWindow = document.getElementById("consoleWindow");
+    const consoleBtn = document.getElementById("consoleBtn");
 
-    // Функция с таймаутом
+    consoleBtn.addEventListener("click", () => {
+      consoleWindow.classList.toggle("visible");
+    });
+
+    function log(message, type = "info") {
+      const entry = document.createElement("div");
+      entry.classList.add("log-entry");
+      if (type === "error") entry.classList.add("log-error");
+      if (type === "ok") entry.classList.add("log-ok");
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      consoleWindow.appendChild(entry);
+      consoleWindow.scrollTop = consoleWindow.scrollHeight;
+    }
+
     function fetchWithTimeout(url, options, timeoutMs) {
       return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error("timeout")), timeoutMs);
+        const timer = setTimeout(() => {
+          reject(new Error("Превышено время ожидания (" + timeoutMs + " мс)"));
+        }, timeoutMs);
+
         fetch(url, options)
           .then(response => {
             clearTimeout(timer);
@@ -118,32 +206,30 @@
     }
 
     async function checkAndRedirect() {
+      log(`Проверка соединения с ${targetUrl}...`);
       try {
         const response = await fetchWithTimeout(targetUrl, { method: "HEAD" }, timeout);
 
-        // Проверяем код ответа
         if (response.ok) {
+          log(`Ответ получен: ${response.status} ${response.statusText}`, "ok");
           window.location.href = targetUrl;
         } else if (response.status === 404) {
+          log(`Ошибка: страница не найдена (код ${response.status})`, "error");
           showError();
         } else {
-          window.location.href = targetUrl; // например, 403 или 500 — всё равно пробуем
+          log(`Ответ сервера: ${response.status} ${response.statusText} — выполняется переход`, "ok");
+          window.location.href = targetUrl;
         }
 
       } catch (error) {
-        // Если fetch не сработал (например, сеть), просто ничего не делаем — не показываем ошибку
-        // до таймаута 5 секунд
-        console.warn("Ошибка соединения или таймаут:", error.message);
+        log(`Ошибка соединения: ${error.message}`, "error");
+        showError();
       }
     }
-
-    // Если через 5 секунд так и не ушли — показываем ошибку
-    const timer = setTimeout(() => showError(), timeout);
 
     function showError() {
       document.getElementById("loading").classList.add("hidden");
       document.getElementById("error").classList.remove("hidden");
-      clearTimeout(timer);
     }
 
     checkAndRedirect();
