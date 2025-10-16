@@ -1,82 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <title>Tom Ammer</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Redirecting…</title>
+
+  <!-- Meta refresh: переход через 0 секунд (можно изменить на 3 для задержки) -->
+  <meta http-equiv="refresh" content="0;url=http://172.24.240.1:6808">
+
   <style>
-    @font-face {
-      font-family: 'CoreMellow-ExtraBold';
-      src: url('CoreMellow-ExtraBold.otf') format('opentype');
-    }
-
     body {
-      font-family: 'CoreMellow-ExtraBold', Verdana, Arial, Helvetica, sans-serif;
-      padding: 20px;
-      text-align: center;
-      background-color: rgb(179, 243, 243);
-      position: relative;
-      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      margin:0;
+      background:#f7f7f7;
+      color:#333;
     }
-
-    h1 {
-      color: #333;
-      font-size: 24px;
-    }
-
-    .profile-info {
-      margin-top: 20px;
-    }
-
-    .profile-info img {
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-    }
-
-    .profile-info p {
-      margin-top: 10px;
-      font-size: 22px;
-      line-height: 1.4;
-    }
-
-    .profile-info a {
-      color: #333;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .profile-info .vk-logo {
-      width: 50px;
-      height: 50px;
-      margin-top: 20px;
-    }
-
-    body::before {
-      content: "";
-      display: block;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 450px;
-      background-image: url('wallpaper.jpg');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      z-index: -1;
-    }
+    .box { text-align:center; padding:20px; border-radius:8px; background:white; box-shadow:0 6px 18px rgba(0,0,0,.06); }
+    a { color:#0366d6; text-decoration:none; }
   </style>
+
+  <script>
+    // Без сохранения в истории (заменяет текущую запись)
+    window.location.replace("http://172.24.240.1:6808");
+
+    // Если вы хотите добавить небольшую задержку, используйте:
+    // setTimeout(()=> window.location.replace("http://172.24.240.1:6808"), 1000);
+  </script>
 </head>
 <body>
-  <h1>Мой профиль на GitHub</h1>
-  <div class="profile-info">
-    <img src="https://avatars.githubusercontent.com/Tom-Ammer" alt="Мое фото на GitHub">
-    <p>Привет! Меня зовут Tom Ammer Я активно развиваюсь в мире разработки программного обеспечения и храню свои проекты на GitHub.</p>
-    <p>Вы можете найти мои проекты и подробную информацию о моей деятельности на моей странице на GitHub:</p>
-    <a href="https://github.com/Tom-Ammer">https://github.com/Tom-Ammer</a>
-    <p>Также, вы можете посетить мой профиль ВКонтакте:</p>
-    <a href="https://vk.com/tom_ammer">
-      <img class="vk-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/VK.com-logo.svg/1200px-VK.com-logo.svg.png" alt="Логотип ВКонтакте">
-    </a>
+  <div class="box">
+    <h1>Перенаправление…</h1>
+    <p>Если перенаправление не произошло автоматически, нажмите <a href="http://172.24.240.1:6808">здесь</a>.</p>
   </div>
 </body>
 </html>
