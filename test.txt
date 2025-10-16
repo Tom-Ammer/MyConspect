@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Перенаправление...</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #f2f4f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+    }
+
+    h1 {
+      font-size: 1.5em;
+      margin-bottom: 16px;
+    }
+
+    p {
+      font-size: 1em;
+    }
+
+    .loader {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="loading">
+    <h1>Перенаправляем вас…</h1>
+    <div class="loader"></div>
+    <p>Пожалуйста, подождите…</p>
+  </div>
+
+  <div class="container hidden" id="error">
+    <h1>Упс!</h1>
+    <p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору.</p>
+  </div>
+
+    <script>
+    const targetUrl = "http://172.24.240.1:6808";
+  
+    fetch(targetUrl)
+      .then(response => {
+        if (!response.ok) {
+          // Если статус, например, 404, 500 и т.п.
+          throw new Error("Ошибка загрузки: " + response.status);
+        }
+        // Всё хорошо — перенаправляем
+        window.location.href = targetUrl;
+      })
+      .catch(() => {
+        // При сетевой ошибке или статусе !== 2xx
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("error").classList.remove("hidden");
+      });
+  
+    // Таймаут на случай зависания
+    setTimeout(() => {
+      document.getElementById("loading").classList.add("hidden");
+      document.getElementById("error").classList.remove("hidden");
+    }, 5000);
+  </script>
+
+</body>
+</html>
