@@ -65,7 +65,7 @@ p { font-size:1em;}
 <p id="infoText"></p>
 
 <script>
-const targetUrl = "http://172.24.240.1:6808";
+const targetUrl = "http://172.24.240.1:6808"; // адрес сервера
 const timeout = 5000;
 
 const loadingDiv = document.getElementById("loading");
@@ -82,23 +82,23 @@ const retryBtn = document.getElementById("retryBtn");
 const infoText = document.getElementById("infoText");
 
 // Логирование
-function log(message,type="info"){
-  const entry=document.createElement("div");
+function log(message, type="info") {
+  const entry = document.createElement("div");
   entry.classList.add("log-entry");
   if(type==="ok") entry.classList.add("log-ok");
   if(type==="error") entry.classList.add("log-error");
-  entry.textContent=`[${new Date().toLocaleTimeString()}] ${message}`;
+  entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
   logContainer.appendChild(entry);
   logContainer.scrollTop = logContainer.scrollHeight;
 
-  let logs = JSON.parse(localStorage.getItem("serverLogs")||"[]");
+  let logs = JSON.parse(localStorage.getItem("serverLogs") || "[]");
   logs.push({message, type, time: new Date().toLocaleTimeString()});
   localStorage.setItem("serverLogs", JSON.stringify(logs));
 }
 
-// Восстановление логов и данных
+// Восстановление логов
 window.addEventListener("load", ()=>{
-  let logs = JSON.parse(localStorage.getItem("serverLogs")||"[]");
+  let logs = JSON.parse(localStorage.getItem("serverLogs") || "[]");
   logs.forEach(l=>{
     const entry=document.createElement("div");
     entry.classList.add("log-entry");
@@ -107,89 +107,119 @@ window.addEventListener("load", ()=>{
     entry.textContent=`[${l.time}] ${l.message}`;
     logContainer.appendChild(entry);
   });
+
   // Версия
   fetch("versions.json")
-    .then(res=>{
-      if(!res.ok) throw new Error("Версия не найдена");
-      return res.json();
-    })
+    .then(res=>res.ok ? res.json() : Promise.reject("Версия не найдена"))
     .then(data=>{
       versionText.textContent = `Версия: ${data.version}`;
       log(`Версия загружена: ${data.version}`, "ok");
     })
     .catch(err=>{
-      log(`Не удалось загрузить версию: ${err.message}`, "error");
+      log(`Не удалось загрузить версию: ${err}`, "error");
       versionText.textContent = "Версия недоступна";
     });
+
   // info.json
   fetch("info.json")
-    .then(res=>{
-      if(!res.ok) throw new Error("info.json не найден");
-      return res.json();
-    })
+    .then(res=>res.ok ? res.json() : Promise.reject("info.json не найден"))
     .then(data=>{
       infoText.textContent = data.text || "";
     })
     .catch(err=>{
-      log(`Не удалось загрузить info.json: ${err.message}`, "error");
+      log(`Не удалось загрузить info.json: ${err}`, "error");
       infoText.textContent = "";
     });
 });
 
-// Переключение консоли
+// Консоль
 consoleBtn.addEventListener("click", ()=>consoleWindow.classList.toggle("visible"));
-
-// Очистка консоли
 clearConsoleBtn.addEventListener("click", ()=>{
   logContainer.innerHTML = "";
   localStorage.removeItem("serverLogs");
 });
 
-// Функция fetch с таймаутом
-function fetchWithTimeout(url, timeout) {
-  return new Promise((resolve, reject)=>{
-    const timer = setTimeout(()=>reject(new Error("Таймаут подключения")), timeout);
-    fetch(url)
-      .then(res=>{
+// ========== Проверка сервера ==========
+
+// fetch с таймаутом
+function fetchWithTimeout(url, timeout, options = {}) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Таймаут подключения")), timeout);
+    fetch(url, options)
+      .then(res => {
         clearTimeout(timer);
-        if(!res.ok) reject(new Error("Ошибка загрузки: " + res.status));
+        if (!res.ok) reject(new Error("Ошибка загрузки: " + res.status));
         else resolve(res);
       })
-      .catch(err=>{
+      .catch(err => {
         clearTimeout(timer);
         reject(err);
       });
   });
 }
 
-// Функция подключения
+// проверка через загрузку favicon (обходит CORS)
+function checkByImage(url, timeout = 5000) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    let timer = setTimeout(() => {
+      img.src = "";
+      reject(new Error("Таймаут изображения"));
+    }, timeout);
+    img.onload = () => { clearTimeout(timer); resolve(true); };
+    img.onerror = () => { clearTimeout(timer); reject(new Error("Ошибка загрузки изображения")); };
+    img.src = url + "/favicon.ico?_=" + Date.now();
+  });
+}
+
 function connectToServer() {
   loader.style.display = "block";
+  log("Проверка доступности сервера...");
+
+  // Попытка 1 — обычный fetch
   fetchWithTimeout(targetUrl, timeout)
-    .then(()=>{
-      log("Сервер доступен.", "ok");
-      setTimeout(()=>window.location.href=targetUrl, 3000);
+    .then(() => {
+      log("Сервер доступен (fetch ok). Перенаправляем...", "ok");
+      window.location.href = targetUrl;
     })
-    .catch(err=>{
-      log(`Ошибка подключения: ${err.message}`, "error");
-      loadingDiv.classList.add("hidden");
-      errorDiv.classList.remove("hidden");
+    .catch(() => {
+      log("fetch не удался — пробуем no-cors...", "error");
+
+      // Попытка 2 — fetch с no-cors
+      fetchWithTimeout(targetUrl, timeout, { mode: 'no-cors' })
+        .then(() => {
+          log("Сервер, возможно, доступен (no-cors). Перенаправляем...", "ok");
+          window.location.href = targetUrl;
+        })
+        .catch(() => {
+          log("no-cors не сработал — пробуем favicon ping...", "info");
+
+          // Попытка 3 — ping через изображение
+          checkByImage(targetUrl, timeout)
+            .then(() => {
+              log("Изображение загружено — сервер точно доступен.", "ok");
+              window.location.href = targetUrl;
+            })
+            .catch(err => {
+              log(`Не удалось подключиться: ${err.message}`, "error");
+              loader.style.display = "none";
+              loadingDiv.classList.add("hidden");
+              errorDiv.classList.remove("hidden");
+            });
+        });
     });
 }
 
-// Кнопка подключения
+// Кнопки
 connectBtn.addEventListener("click", ()=>{
   statusText.textContent = "Подключение… Пожалуйста, подождите";
-  log("Проверка доступности сайта...");
   loadingDiv.classList.remove("hidden");
   errorDiv.classList.add("hidden");
   connectToServer();
 });
 
-// Кнопка попробовать снова
 retryBtn.addEventListener("click", ()=>{
   statusText.textContent = "Подключение… Пожалуйста, подождите";
-  log("Повторная проверка доступности сайта...");
   loadingDiv.classList.remove("hidden");
   errorDiv.classList.add("hidden");
   connectToServer();
