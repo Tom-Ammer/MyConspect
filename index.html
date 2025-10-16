@@ -23,6 +23,7 @@ p{font-size:1em}
 </style>
 </head>
 <body>
+
 <button id="consoleBtn" title="Консоль">
 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
 </button>
@@ -40,80 +41,78 @@ p{font-size:1em}
 </div>
 
 <script>
-const targetUrl="http://172.24.240.1:6808";
-const timeout=5000;
-const consoleBtn=document.getElementById("consoleBtn");
-const consoleWindow=document.getElementById("consoleWindow");
-const modeToggle=document.getElementById("modeToggle");
-const loadingEl=document.getElementById("loading");
-const errorEl=document.getElementById("error");
+const targetUrl = "http://172.24.240.1:6808";
+const timeout = 5000;
+const consoleBtn = document.getElementById("consoleBtn");
+const consoleWindow = document.getElementById("consoleWindow");
+const modeToggle = document.getElementById("modeToggle");
+const loadingEl = document.getElementById("loading");
+const errorEl = document.getElementById("error");
 
-// Режим сохраняем в localStorage
-let mode=localStorage.getItem("checkMode")||"fetch";
-modeToggle.textContent="Режим: "+mode;
+// Сохраняем режим
+let mode = localStorage.getItem("checkMode") || "fetch";
+modeToggle.textContent = "Режим: " + mode;
 
+// Консоль
 consoleBtn.addEventListener("click",()=>consoleWindow.classList.toggle("visible"));
-modeToggle.addEventListener("click",()=>{
-  mode=(mode==="fetch")?"advanced":"fetch";
-  localStorage.setItem("checkMode",mode);
-  location.reload(); // перезагрузка страницы с новым режимом
-});
-
 function log(message,type="info"){
-  const entry=document.createElement("div");
+  const entry = document.createElement("div");
   entry.classList.add("log-entry");
   if(type==="ok") entry.classList.add("log-ok");
   if(type==="error") entry.classList.add("log-error");
-  entry.textContent=`[${new Date().toLocaleTimeString()}] ответ от сайта: ${message}`;
+  entry.textContent = `[${new Date().toLocaleTimeString()}] ответ от сайта: ${message}`;
   consoleWindow.appendChild(entry);
-  consoleWindow.scrollTop=consoleWindow.scrollHeight;
+  consoleWindow.scrollTop = consoleWindow.scrollHeight;
 }
 
+// Переключение режима с перезагрузкой
+modeToggle.addEventListener("click",()=>{
+  mode = (mode==="fetch")?"advanced":"fetch";
+  localStorage.setItem("checkMode",mode);
+  location.reload();
+});
+
+// Показ ошибки
 function showError(){loadingEl.classList.add("hidden");errorEl.classList.remove("hidden");}
 
-// Основная проверка — по твоему рабочему коду fetch без no-cors
-function checkFetch(){
-  const controller=new AbortController();
-  const signal=controller.signal;
-  let finished=false;
-  const t=setTimeout(()=>{if(!finished){finished=true;controller.abort();log("Ошибка: время ожидания 5s","error");showError();}},timeout);
-
-  fetch(targetUrl,{signal})
-    .then(response=>{
-      if(finished) return;
-      finished=true; clearTimeout(t);
-      if(!response.ok){log(`HTTP ${response.status} ${response.statusText}`,"error");showError();}
-      else{log(`HTTP ${response.status} ${response.statusText}`,"ok");setTimeout(()=>window.location.href=targetUrl,150);}
-    })
-    .catch(err=>{if(finished) return; finished=true; clearTimeout(t); log(`Ошибка запроса: ${err.message}`,"error");showError();});
+// Главная функция: редирект всегда через window.location.href
+function redirectServer(){
+  log("Редирект к серверу через window.location.href","ok");
+  setTimeout(()=>{window.location.href=targetUrl},150);
 }
 
-// Режим advanced — проверка через fetch + Image (не ломаем редирект)
-function checkAdvanced(){
-  // пытаемся fetch без no-cors
-  const controller=new AbortController();
-  const signal=controller.signal;
-  let finished=false;
-  const t=setTimeout(()=>{if(!finished){finished=true;controller.abort();log("Ошибка: время ожидания 5s","error");showError();}},timeout);
-
-  fetch(targetUrl,{signal})
-    .then(response=>{
-      if(finished) return;
-      finished=true; clearTimeout(t);
-      if(!response.ok){log(`HTTP ${response.status} ${response.statusText}`,"error");showError();}
-      else{log(`HTTP ${response.status} ${response.statusText}`,"ok"); setTimeout(()=>window.location.href=targetUrl,150);}
-    })
-    .catch(err=>{if(finished) return; finished=true; clearTimeout(t); log(`Ошибка запроса: ${err.message}`,"error");showError();});
-
-  // Проверка через Image (только логирование)
-  const img=new Image();
-  img.onload=function(){log("Сервер доступен (Image)","ok");}
-  img.onerror=function(){log("Сервер недоступен (Image)","error");}
-  img.src=targetUrl+"/favicon.ico?"+Date.now();
+// Фейковая проверка для режима advanced (лог только)
+function advancedCheck(){
+  // Попытка fetch с no-cors (логируем только)
+  fetch(targetUrl,{mode:"no-cors"})
+    .then(()=>log("Сервер доступен (fetch no-cors)","ok"))
+    .catch(()=>log("Сервер недоступен (fetch no-cors)","error"));
+  // Попытка Image
+  const img = new Image();
+  img.onload = ()=>log("Сервер доступен (Image)","ok");
+  img.onerror = ()=>log("Сервер недоступен (Image)","error");
+  img.src = targetUrl + "/favicon.ico?" + Date.now();
 }
 
-// Запуск в зависимости от режима
-if(mode==="fetch") checkFetch(); else checkAdvanced();
+// Запуск таймаута 5 секунд
+setTimeout(()=>{
+  log("Время ожидания 5 секунд истекло. Выполняем редирект.","ok");
+  redirectServer();
+},timeout);
+
+// Если режим advanced — делаем дополнительные проверки (только лог)
+if(mode==="advanced") advancedCheck();
+
+// Редирект сразу через рабочий fetch без no-cors для локального HTTP
+fetch(targetUrl)
+  .then(response=>{
+    if(response.ok){log(`HTTP ${response.status} ${response.statusText}`,"ok"); redirectServer();}
+    else{log(`HTTP ${response.status} ${response.statusText}`,"error"); showError();}
+  })
+  .catch(err=>{
+    log(`Ошибка запроса: ${err.message}`,"error"); redirectServer();
+  });
+
 </script>
 </body>
 </html>
