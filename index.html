@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Перенаправление...</title>
 <style>
 body{margin:0;padding:0;font-family:"Segoe UI",sans-serif;background:#f2f4f8;display:flex;align-items:center;justify-content:center;height:100vh;color:#333}
@@ -10,7 +10,7 @@ body{margin:0;padding:0;font-family:"Segoe UI",sans-serif;background:#f2f4f8;dis
 h1{font-size:1.5em;margin-bottom:16px}
 p{font-size:1em}
 .loader{border:6px solid #f3f3f3;border-top:6px solid #3498db;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}
-@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 .hidden{display:none}
 #consoleBtn{position:fixed;top:16px;right:16px;width:36px;height:36px;padding:6px;border:none;background:transparent;cursor:pointer;z-index:1000}
 #consoleBtn svg{width:28px;height:28px;fill:#3498db}
@@ -47,11 +47,16 @@ const consoleWindow=document.getElementById("consoleWindow");
 const modeToggle=document.getElementById("modeToggle");
 const loadingEl=document.getElementById("loading");
 const errorEl=document.getElementById("error");
-let mode="fetch"; // fetch по умолчанию
+
+// Режим сохраняем в localStorage
+let mode=localStorage.getItem("checkMode")||"fetch";
+modeToggle.textContent="Режим: "+mode;
 
 consoleBtn.addEventListener("click",()=>consoleWindow.classList.toggle("visible"));
 modeToggle.addEventListener("click",()=>{
-  if(mode==="fetch"){mode="advanced";modeToggle.textContent="Режим: advanced"}else{mode="fetch";modeToggle.textContent="Режим: fetch()"}
+  mode=(mode==="fetch")?"advanced":"fetch";
+  localStorage.setItem("checkMode",mode);
+  location.reload(); // перезагрузка страницы с новым режимом
 });
 
 function log(message,type="info"){
@@ -66,6 +71,7 @@ function log(message,type="info"){
 
 function showError(){loadingEl.classList.add("hidden");errorEl.classList.remove("hidden");}
 
+// Основная проверка — по твоему рабочему коду fetch без no-cors
 function checkFetch(){
   const controller=new AbortController();
   const signal=controller.signal;
@@ -76,34 +82,38 @@ function checkFetch(){
     .then(response=>{
       if(finished) return;
       finished=true; clearTimeout(t);
-      if(!response.ok){log(`HTTP ${response.status} ${response.statusText}`,"error");showError();}else{log(`HTTP ${response.status} ${response.statusText}`,"ok");setTimeout(()=>window.location.href=targetUrl,150);}
+      if(!response.ok){log(`HTTP ${response.status} ${response.statusText}`,"error");showError();}
+      else{log(`HTTP ${response.status} ${response.statusText}`,"ok");setTimeout(()=>window.location.href=targetUrl,150);}
     })
     .catch(err=>{if(finished) return; finished=true; clearTimeout(t); log(`Ошибка запроса: ${err.message}`,"error");showError();});
 }
 
+// Режим advanced — проверка через fetch + Image (не ломаем редирект)
 function checkAdvanced(){
-  // попробуем fetch с no-cors
+  // пытаемся fetch без no-cors
   const controller=new AbortController();
   const signal=controller.signal;
   let finished=false;
   const t=setTimeout(()=>{if(!finished){finished=true;controller.abort();log("Ошибка: время ожидания 5s","error");showError();}},timeout);
 
-  fetch(targetUrl,{mode:"no-cors",signal})
-    .then(()=>{if(finished) return; finished=true; clearTimeout(t); log("Сервер доступен (fetch no-cors)","ok"); setTimeout(()=>window.location.href=targetUrl,150);})
-    .catch(()=>{if(finished) return; finished=true; clearTimeout(t); log("Сервер недоступен (fetch no-cors)","error"); showError();});
+  fetch(targetUrl,{signal})
+    .then(response=>{
+      if(finished) return;
+      finished=true; clearTimeout(t);
+      if(!response.ok){log(`HTTP ${response.status} ${response.statusText}`,"error");showError();}
+      else{log(`HTTP ${response.status} ${response.statusText}`,"ok"); setTimeout(()=>window.location.href=targetUrl,150);}
+    })
+    .catch(err=>{if(finished) return; finished=true; clearTimeout(t); log(`Ошибка запроса: ${err.message}`,"error");showError();});
 
-  // Image fallback
+  // Проверка через Image (только логирование)
   const img=new Image();
-  img.onload=function(){if(finished) return; finished=true; clearTimeout(t); log("Сервер доступен (Image)","ok"); setTimeout(()=>window.location.href=targetUrl,150);}
-  img.onerror=function(){if(finished) return; finished=true; clearTimeout(t); log("Сервер недоступен (Image)","error"); showError();}
+  img.onload=function(){log("Сервер доступен (Image)","ok");}
+  img.onerror=function(){log("Сервер недоступен (Image)","error");}
   img.src=targetUrl+"/favicon.ico?"+Date.now();
 }
 
-function checkServer(){
-  if(mode==="fetch") checkFetch(); else checkAdvanced();
-}
-
-checkServer();
+// Запуск в зависимости от режима
+if(mode==="fetch") checkFetch(); else checkAdvanced();
 </script>
 </body>
 </html>
