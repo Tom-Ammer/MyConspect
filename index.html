@@ -1,40 +1,93 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Redirecting…</title>
-
-  <!-- Meta refresh: переход через 0 секунд (можно изменить на 3 для задержки) -->
-  <meta http-equiv="refresh" content="0;url=http://172.24.240.1:6808">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Перенаправление...</title>
   <style>
     body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height:100vh;
-      margin:0;
-      background:#f7f7f7;
-      color:#333;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: #f2f4f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #333;
     }
-    .box { text-align:center; padding:20px; border-radius:8px; background:white; box-shadow:0 6px 18px rgba(0,0,0,.06); }
-    a { color:#0366d6; text-decoration:none; }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+    }
+
+    h1 {
+      font-size: 1.5em;
+      margin-bottom: 16px;
+    }
+
+    p {
+      font-size: 1em;
+    }
+
+    .loader {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
-
-  <script>
-    // Без сохранения в истории (заменяет текущую запись)
-    window.location.replace("http://172.24.240.1:6808");
-
-    // Если вы хотите добавить небольшую задержку, используйте:
-    // setTimeout(()=> window.location.replace("http://172.24.240.1:6808"), 1000);
-  </script>
 </head>
 <body>
-  <div class="box">
-    <h1>Перенаправление…</h1>
-    <p>Если перенаправление не произошло автоматически, нажмите <a href="http://172.24.240.1:6808">здесь</a>.</p>
+  <div class="container" id="loading">
+    <h1>Перенаправляем вас…</h1>
+    <div class="loader"></div>
+    <p>Пожалуйста, подождите…</p>
   </div>
+
+  <div class="container hidden" id="error">
+    <h1>Упс!</h1>
+    <p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору.</p>
+  </div>
+
+  <script>
+    // Целевой адрес
+    const targetUrl = "http://172.24.240.1:6808";
+
+    // Проверка доступности целевой страницы
+    fetch(targetUrl, { mode: "no-cors" }) // no-cors из-за политики CORS
+      .then(() => {
+        // Попытка перенаправления
+        window.location.href = targetUrl;
+      })
+      .catch(() => {
+        // При ошибке — показать сообщение
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("error").classList.remove("hidden");
+      });
+
+    // Дополнительная защита: если нет ответа в течение 5 секунд — показать ошибку
+    setTimeout(() => {
+      document.getElementById("loading").classList.add("hidden");
+      document.getElementById("error").classList.remove("hidden");
+    }, 5000);
+  </script>
 </body>
 </html>
