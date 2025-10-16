@@ -96,7 +96,7 @@ function log(message,type="info"){
   localStorage.setItem("serverLogs", JSON.stringify(logs));
 }
 
-// Восстановление логов
+// Восстановление логов и данных
 window.addEventListener("load", ()=>{
   // Логи
   let logs = JSON.parse(localStorage.getItem("serverLogs")||"[]");
@@ -138,45 +138,16 @@ clearConsoleBtn.addEventListener("click", ()=>{
   localStorage.removeItem("serverLogs");
 });
 
-// Проверка сервера с таймаутом
-function fetchWithTimeout(url, timeout=5000){
-  return new Promise((resolve,reject)=>{
-    const startTime = new Date();
-    log(`Начало запроса к ${url}`, "info");
-    const controller = new AbortController();
-    const signal = controller.signal;
-    const timer = setTimeout(()=>{
-      controller.abort(); 
-      const duration = ((new Date())-startTime)/1000;
-      reject(new Error(`Таймаут ${duration.toFixed(2)} сек`));
-    }, timeout);
-    fetch(url,{signal})
-      .then(response=>{
-        clearTimeout(timer);
-        const duration = ((new Date())-startTime)/1000;
-        log(`Ответ сервера: ${response.status} ${response.statusText} (время: ${duration.toFixed(2)} сек)`, "ok");
-        if(!response.ok) reject(new Error("Ошибка загрузки: "+response.status));
-        else resolve(response);
-      })
-      .catch(err=>{
-        clearTimeout(timer);
-        const duration = ((new Date())-startTime)/1000;
-        log(`Ошибка запроса: ${err.message} (время: ${duration.toFixed(2)} сек)`, "error");
-        reject(err);
-      });
-  });
-}
-
-// Функция подключения
-function connectToServer() {
+// Проверка доступности сайта
+function checkSiteAvailability() {
   loader.style.display = "block";
-  fetchWithTimeout(targetUrl, timeout)
-    .then(()=>{
-      log("Сервер доступен.", "ok");
-      setTimeout(()=>window.location.href=targetUrl, 3000);
+  fetch(targetUrl, {method:"GET"})
+    .then(()=> {
+      log("Сайт доступен", "ok");
+      setTimeout(()=>window.location.href = targetUrl, 3000);
     })
     .catch(err=>{
-      log(`Ошибка подключения: ${err.message}`, "error");
+      log(`Сайт недоступен: ${err.message}`, "error");
       loadingDiv.classList.add("hidden");
       errorDiv.classList.remove("hidden");
     });
@@ -185,19 +156,19 @@ function connectToServer() {
 // Кнопка подключения
 connectBtn.addEventListener("click", ()=>{
   statusText.textContent = "Подключение… Пожалуйста, подождите";
-  log("Начинаем проверку сервера...");
+  log("Проверка доступности сайта...");
   loadingDiv.classList.remove("hidden");
   errorDiv.classList.add("hidden");
-  connectToServer();
+  checkSiteAvailability();
 });
 
 // Кнопка попробовать снова
 retryBtn.addEventListener("click", ()=>{
   statusText.textContent = "Подключение… Пожалуйста, подождите";
-  log("Попытка повторного подключения...");
+  log("Повторная проверка доступности сайта...");
   loadingDiv.classList.remove("hidden");
   errorDiv.classList.add("hidden");
-  connectToServer();
+  checkSiteAvailability();
 });
 </script>
 
