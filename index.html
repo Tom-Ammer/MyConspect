@@ -25,7 +25,6 @@
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
       max-width: 400px;
       width: 90%;
-      transition: opacity 0.3s ease;
     }
 
     h1 {
@@ -38,7 +37,6 @@
       color: #555;
     }
 
-    /* Красивая анимация загрузки */
     .loader {
       position: relative;
       width: 60px;
@@ -74,16 +72,6 @@
       display: none;
     }
 
-    .fade-in {
-      animation: fadeIn 0.5s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Кнопка консоли */
     #consoleBtn {
       position: fixed;
       top: 16px;
@@ -100,11 +88,8 @@
       z-index: 1000;
     }
 
-    #consoleBtn:hover {
-      background: #2176b8;
-    }
+    #consoleBtn:hover { background: #2176b8; }
 
-    /* Окно консоли */
     #consoleWindow {
       position: fixed;
       top: 60px;
@@ -123,48 +108,26 @@
       z-index: 999;
     }
 
-    #consoleWindow.visible {
-      display: block;
-      animation: fadeInConsole 0.3s ease;
-    }
+    #consoleWindow.visible { display: block; }
 
-    @keyframes fadeInConsole {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .log-entry {
-      margin-bottom: 6px;
-      border-left: 3px solid #3498db;
-      padding-left: 6px;
-    }
-
-    .log-error {
-      border-left-color: #e74c3c;
-      color: #ff9e9e;
-    }
-
-    .log-ok {
-      border-left-color: #2ecc71;
-      color: #a6f3b1;
-    }
-
+    .log-entry { margin-bottom: 6px; border-left: 3px solid #3498db; padding-left: 6px; }
+    .log-error { border-left-color: #e74c3c; color: #ff9e9e; }
+    .log-ok { border-left-color: #2ecc71; color: #a6f3b1; }
   </style>
 </head>
 <body>
   <button id="consoleBtn">Консоль</button>
-
   <div id="consoleWindow"></div>
 
-  <div class="container fade-in" id="loading">
+  <div class="container" id="loading">
     <h1>Проверяем соединение…</h1>
     <div class="loader"></div>
     <p>Подождите, идёт проверка доступности сервера.</p>
   </div>
 
-  <div class="container hidden fade-in" id="error">
+  <div class="container hidden" id="error">
     <h1>Ошибка</h1>
-    <p>Страница не найдена или сервер недоступен.<br>Обратитесь к администратору.</p>
+    <p>Сервер не отвечает или страница не найдена.<br>Обратитесь к администратору.</p>
   </div>
 
   <script>
@@ -187,49 +150,47 @@
       consoleWindow.scrollTop = consoleWindow.scrollHeight;
     }
 
-    function fetchWithTimeout(url, options, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          reject(new Error("Превышено время ожидания (" + timeoutMs + " мс)"));
-        }, timeoutMs);
-
-        fetch(url, options)
-          .then(response => {
-            clearTimeout(timer);
-            resolve(response);
-          })
-          .catch(err => {
-            clearTimeout(timer);
-            reject(err);
-          });
-      });
-    }
-
-    async function checkAndRedirect() {
-      log(`Проверка соединения с ${targetUrl}...`);
-      try {
-        const response = await fetchWithTimeout(targetUrl, { method: "HEAD" }, timeout);
-
-        if (response.ok) {
-          log(`Ответ получен: ${response.status} ${response.statusText}`, "ok");
-          window.location.href = targetUrl;
-        } else if (response.status === 404) {
-          log(`Ошибка: страница не найдена (код ${response.status})`, "error");
-          showError();
-        } else {
-          log(`Ответ сервера: ${response.status} ${response.statusText} — выполняется переход`, "ok");
-          window.location.href = targetUrl;
-        }
-
-      } catch (error) {
-        log(`Ошибка соединения: ${error.message}`, "error");
-        showError();
-      }
-    }
-
     function showError() {
       document.getElementById("loading").classList.add("hidden");
       document.getElementById("error").classList.remove("hidden");
+    }
+
+    async function checkAndRedirect() {
+      // Проверяем — если страница запущена через HTTPS
+      if (window.location.protocol === "https:") {
+        log("⚠️ Невозможно проверить HTTP-сервер с HTTPS-страницы. Откройте файл через HTTP или file://", "error");
+        showError();
+        return;
+      }
+
+      log(`Проверка соединения с ${targetUrl}...`);
+      const start = performance.now();
+      let timedOut = false;
+      const controller = new AbortController();
+
+      const timer = setTimeout(() => {
+        controller.abort();
+        timedOut = true;
+      }, timeout);
+
+      try {
+        const response = await fetch(targetUrl, { method: "HEAD", mode: "no-cors", signal: controller.signal });
+        clearTimeout(timer);
+
+        const time = Math.round(performance.now() - start);
+        if (!timedOut) {
+          log(`Сервер доступен (${time} мс) — выполняется переход`, "ok");
+          window.location.href = targetUrl;
+        }
+      } catch (error) {
+        clearTimeout(timer);
+        if (timedOut) {
+          log(`⏱ Превышено время ожидания (${timeout} мс)`, "error");
+        } else {
+          log(`❌ Ошибка соединения: ${error.message}`, "error");
+        }
+        showError();
+      }
     }
 
     checkAndRedirect();
