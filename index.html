@@ -3,116 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Перенаправление...</title>
+<title>MyConspect</title>
 <style>
-body{margin:0;padding:0;font-family:"Segoe UI",sans-serif;background:#f2f4f8;display:flex;align-items:center;justify-content:center;height:100vh;color:#333}
-.container{text-align:center;background:white;padding:40px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.1);max-width:400px}
-h1{font-size:1.5em;margin-bottom:16px}
-p{font-size:1em}
-.loader{border:6px solid #f3f3f3;border-top:6px solid #3498db;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}
-@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-.hidden{display:none}
-#consoleBtn{position:fixed;top:16px;right:16px;width:36px;height:36px;padding:6px;border:none;background:transparent;cursor:pointer;z-index:1000}
-#consoleBtn svg{width:28px;height:28px;fill:#3498db}
-#consoleWindow{position:fixed;top:60px;right:20px;width:360px;height:220px;background:#1e1e1e;color:#dcdcdc;font-family:monospace;font-size:13px;border-radius:8px;padding:10px;box-shadow:0 8px 25px rgba(0,0,0,0.3);overflow:auto;display:none;z-index:999}
-#consoleWindow.visible{display:block}
-.log-entry{margin-bottom:6px;border-left:3px solid #3498db;padding-left:6px}
-.log-error{border-left-color:#e74c3c;color:#ff9e9e}
-.log-ok{border-left-color:#2ecc71;color:#a6f3b1}
-#modeToggle{position:fixed;top:16px;right:60px;background:#3498db;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;z-index:1000}
+body { margin:0; padding:0; font-family:"Segoe UI",sans-serif; background:#f2f4f8; display:flex; align-items:center; justify-content:center; height:100vh; color:#333;}
+.container { text-align:center; background:white; padding:40px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.1); max-width:400px;}
+h1 { font-size:1.5em; margin-bottom:16px;}
+p { font-size:1em;}
+.loader { border:6px solid #f3f3f3; border-top:6px solid #3498db; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto; display:none;}
+@keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+.hidden { display:none; }
+#connectBtn { background:#3498db; color:white; border:none; padding:12px 24px; border-radius:8px; font-size:16px; cursor:pointer; margin-top:16px; transition:0.3s;}
+#connectBtn:hover { background:#2980b9; }
+#retryBtn { background:#3498db; color:white; border:none; padding:10px 20px; border-radius:8px; font-size:14px; cursor:pointer; margin-top:12px; transition:0.3s;}
+#retryBtn:hover { background:#2980b9; }
+/* Консоль */
+#consoleBtn { position:fixed; top:16px; right:16px; width:36px; height:36px; padding:6px; border:none; background:transparent; cursor:pointer; z-index:1000;}
+#consoleBtn svg { width:28px; height:28px; fill:#3498db;}
+#consoleWindow { position:fixed; top:60px; right:20px; width:380px; height:300px; background:#1e1e1e; color:#dcdcdc; font-family:monospace; font-size:13px; border-radius:8px; padding:10px; box-shadow:0 8px 25px rgba(0,0,0,0.3); overflow:auto; display:none; flex-direction:column; z-index:999;}
+#consoleWindow.visible { display:flex; }
+#consoleHeader { display:flex; justify-content:flex-end; margin-bottom:6px;}
+#clearConsoleBtn { background:#3498db; border:none; color:white; font-size:16px; width:32px; height:32px; border-radius:50%; cursor:pointer; box-shadow:0 3px 6px rgba(0,0,0,0.2); display:flex; align-items:center; justify-content:center; transition:0.3s;}
+#clearConsoleBtn:hover { background:#2980b9; transform:scale(1.1);}
+#clearConsoleBtn:active { transform:scale(0.95);}
+#logContainer { flex:1; overflow:auto;}
+.log-entry { margin-bottom:6px; border-left:3px solid #3498db; padding-left:6px; word-break:break-word;}
+.log-error { border-left-color:#e74c3c; color:#ff9e9e;}
+.log-ok { border-left-color:#2ecc71; color:#a6f3b1;}
 </style>
 </head>
 <body>
 
-<button id="consoleBtn" title="Консоль">
-<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-</button>
-<button id="modeToggle" title="Переключить режим проверки">Режим: fetch()</button>
-<div id="consoleWindow"></div>
-
 <div class="container" id="loading">
-<h1>Перенаправляем вас…</h1>
-<div class="loader"></div>
-<p>Пожалуйста, подождите… (проверка доступности сервера — 5 секунд)</p>
+  <h1 id="statusText">MyConspect v1.2</h1>
+  <div class="loader" id="loader"></div>
+  <button id="connectBtn">Подключиться</button>
 </div>
+
 <div class="container hidden" id="error">
-<h1>Упс!</h1>
-<p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору.</p>
+  <h1>Упс!</h1>
+  <p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору @TomAmmer</p>
+  <button id="retryBtn">Попробовать снова</button>
+</div>
+
+<button id="consoleBtn" title="Консоль">
+  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+</button>
+
+<div id="consoleWindow">
+  <div id="consoleHeader">
+    <button id="clearConsoleBtn" title="Очистить консоль">🧹</button>
+  </div>
+  <div id="logContainer"></div>
 </div>
 
 <script>
 const targetUrl = "http://172.24.240.1:6808";
 const timeout = 5000;
+
+const loadingDiv = document.getElementById("loading");
+const errorDiv = document.getElementById("error");
+const loader = document.getElementById("loader");
+const statusText = document.getElementById("statusText");
 const consoleBtn = document.getElementById("consoleBtn");
 const consoleWindow = document.getElementById("consoleWindow");
-const modeToggle = document.getElementById("modeToggle");
-const loadingEl = document.getElementById("loading");
-const errorEl = document.getElementById("error");
+const logContainer = document.getElementById("logContainer");
+const connectBtn = document.getElementById("connectBtn");
+const clearConsoleBtn = document.getElementById("clearConsoleBtn");
+const retryBtn = document.getElementById("retryBtn");
 
-// Сохраняем режим
-let mode = localStorage.getItem("checkMode") || "fetch";
-modeToggle.textContent = "Режим: " + mode;
-
-// Консоль
-consoleBtn.addEventListener("click",()=>consoleWindow.classList.toggle("visible"));
+// Логирование с подробной информацией
 function log(message,type="info"){
-  const entry = document.createElement("div");
+  const entry=document.createElement("div");
   entry.classList.add("log-entry");
   if(type==="ok") entry.classList.add("log-ok");
   if(type==="error") entry.classList.add("log-error");
-  entry.textContent = `[${new Date().toLocaleTimeString()}] ответ от сайта: ${message}`;
-  consoleWindow.appendChild(entry);
-  consoleWindow.scrollTop = consoleWindow.scrollHeight;
+  entry.textContent=`[${new Date().toLocaleTimeString()}] ${message}`;
+  logContainer.appendChild(entry);
+  logContainer.scrollTop = logContainer.scrollHeight;
+
+  let logs = JSON.parse(localStorage.getItem("serverLogs")||"[]");
+  logs.push({message, type, time: new Date().toLocaleTimeString()});
+  localStorage.setItem("serverLogs", JSON.stringify(logs));
 }
 
-// Переключение режима с перезагрузкой
-modeToggle.addEventListener("click",()=>{
-  mode = (mode==="fetch")?"advanced":"fetch";
-  localStorage.setItem("checkMode",mode);
-  location.reload();
+// Восстановление логов
+window.addEventListener("load", ()=>{
+  let logs = JSON.parse(localStorage.getItem("serverLogs")||"[]");
+  logs.forEach(l=>{
+    const entry=document.createElement("div");
+    entry.classList.add("log-entry");
+    if(l.type==="ok") entry.classList.add("log-ok");
+    if(l.type==="error") entry.classList.add("log-error");
+    entry.textContent=`[${l.time}] ${l.message}`;
+    logContainer.appendChild(entry);
+  });
 });
 
-// Показ ошибки
-function showError(){loadingEl.classList.add("hidden");errorEl.classList.remove("hidden");}
+// Переключение консоли
+consoleBtn.addEventListener("click", ()=>consoleWindow.classList.toggle("visible"));
 
-// Главная функция: редирект всегда через window.location.href
-function redirectServer(){
-  log("Редирект к серверу через window.location.href","ok");
-  setTimeout(()=>{window.location.href=targetUrl},150);
-}
+// Очистка консоли
+clearConsoleBtn.addEventListener("click", ()=>{
+  logContainer.innerHTML = "";
+  localStorage.removeItem("serverLogs");
+});
 
-// Фейковая проверка для режима advanced (лог только)
-function advancedCheck(){
-  // Попытка fetch с no-cors (логируем только)
-  fetch(targetUrl,{mode:"no-cors"})
-    .then(()=>log("Сервер доступен (fetch no-cors)","ok"))
-    .catch(()=>log("Сервер недоступен (fetch no-cors)","error"));
-  // Попытка Image
-  const img = new Image();
-  img.onload = ()=>log("Сервер доступен (Image)","ok");
-  img.onerror = ()=>log("Сервер недоступен (Image)","error");
-  img.src = targetUrl + "/favicon.ico?" + Date.now();
-}
-
-// Запуск таймаута 5 секунд
-setTimeout(()=>{
-  log("Время ожидания 5 секунд истекло. Выполняем редирект.","ok");
-  redirectServer();
-},timeout);
-
-// Если режим advanced — делаем дополнительные проверки (только лог)
-if(mode==="advanced") advancedCheck();
-
-// Редирект сразу через рабочий fetch без no-cors для локального HTTP
-fetch(targetUrl)
-  .then(response=>{
-    if(response.ok){log(`HTTP ${response.status} ${response.statusText}`,"ok"); redirectServer();}
-    else{log(`HTTP ${response.status} ${response.statusText}`,"error"); showError();}
-  })
-  .catch(err=>{
-    log(`Ошибка запроса: ${err.message}`,"error"); redirectServer();
+// Проверка сервера с таймаутом и подробной инфой
+function fetchWithTimeout(url, timeout=5000){
+  return new Promise((resolve,reject)=>{
+    const startTime = new Date();
+    log(`Начало запроса к ${url}`, "info");
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const timer = setTimeout(()=>{
+      controller.abort(); 
+      const duration = ((new Date())-startTime)/1000;
+      reject(new Error(`Таймаут ${duration.toFixed(2)} сек`));
+    }, timeout);
+    fetch(url,{signal})
+      .then(response=>{
+        clearTimeout(timer);
+        const duration = ((new Date())-startTime)/1000;
+        log(`Ответ сервера: ${response.status} ${response.statusText} (время: ${duration.toFixed(2)} сек)`, "ok");
+        if(!response.ok) reject(new Error("Ошибка загрузки: "+response.status));
+        else resolve(response);
+      })
+      .catch(err=>{
+        clearTimeout(timer);
+        const duration = ((new Date())-startTime)/1000;
+        log(`Ошибка запроса: ${err.message} (время: ${duration.toFixed(2)} сек)`, "error");
+        reject(err);
+      });
   });
+}
 
+// Вынесем логику подключения для кнопок
+function connectToServer() {
+  loader.style.display = "block";
+  fetchWithTimeout(targetUrl, timeout)
+    .then(()=>{
+      log("Сервер доступен.", "ok");
+      setTimeout(()=>window.location.href=targetUrl, 3000);
+    })
+    .catch(err=>{
+      log(`Ошибка подключения: ${err.message}`, "error");
+      loadingDiv.classList.add("hidden");
+      errorDiv.classList.remove("hidden");
+    });
+}
+
+// Кнопка подключения
+connectBtn.addEventListener("click", ()=>{
+  statusText.textContent = "Подключение… Пожалуйста, подождите";
+  log("Начинаем проверку сервера...");
+  loadingDiv.classList.remove("hidden");
+  errorDiv.classList.add("hidden");
+  connectToServer();
+});
+
+// Кнопка попробовать снова
+retryBtn.addEventListener("click", ()=>{
+  statusText.textContent = "Подключение… Пожалуйста, подождите";
+  log("Попытка повторного подключения...");
+  loadingDiv.classList.remove("hidden");
+  errorDiv.classList.add("hidden");
+  connectToServer();
+});
 </script>
 </body>
 </html>
