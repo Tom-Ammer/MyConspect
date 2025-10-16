@@ -98,7 +98,6 @@ function log(message,type="info"){
 
 // Восстановление логов и данных
 window.addEventListener("load", ()=>{
-  // Логи
   let logs = JSON.parse(localStorage.getItem("serverLogs")||"[]");
   logs.forEach(l=>{
     const entry=document.createElement("div");
@@ -138,19 +137,28 @@ clearConsoleBtn.addEventListener("click", ()=>{
   localStorage.removeItem("serverLogs");
 });
 
-// Проверка доступности сайта
+// Проверка доступности сайта через Image
 function checkSiteAvailability() {
   loader.style.display = "block";
-  fetch(targetUrl, {method:"GET"})
-    .then(()=> {
-      log("Сайт доступен", "ok");
-      setTimeout(()=>window.location.href = targetUrl, 3000);
-    })
-    .catch(err=>{
-      log(`Сайт недоступен: ${err.message}`, "error");
-      loadingDiv.classList.add("hidden");
-      errorDiv.classList.remove("hidden");
-    });
+  const img = new Image();
+  let timer = setTimeout(()=>{
+    img.src="";
+    log("Сайт недоступен (таймаут)", "error");
+    loadingDiv.classList.add("hidden");
+    errorDiv.classList.remove("hidden");
+  }, timeout);
+  img.onload = ()=>{
+    clearTimeout(timer);
+    log("Сайт доступен", "ok");
+    setTimeout(()=>window.location.href = targetUrl, 3000);
+  };
+  img.onerror = ()=>{
+    clearTimeout(timer);
+    log("Сайт недоступен (ошибка загрузки)", "error");
+    loadingDiv.classList.add("hidden");
+    errorDiv.classList.remove("hidden");
+  };
+  img.src = targetUrl + "/favicon.ico?" + Date.now(); // маленький ресурс для проверки
 }
 
 // Кнопка подключения
