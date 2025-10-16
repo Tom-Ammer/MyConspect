@@ -109,22 +109,30 @@ window.addEventListener("load", ()=>{
   });
   // Версия
   fetch("versions.json")
-    .then(res=>res.json())
+    .then(res=>{
+      if(!res.ok) throw new Error("Версия не найдена");
+      return res.json();
+    })
     .then(data=>{
       versionText.textContent = `Версия: ${data.version}`;
       log(`Версия загружена: ${data.version}`, "ok");
     })
     .catch(err=>{
       log(`Не удалось загрузить версию: ${err.message}`, "error");
+      versionText.textContent = "Версия недоступна";
     });
   // info.json
   fetch("info.json")
-    .then(res=>res.json())
+    .then(res=>{
+      if(!res.ok) throw new Error("info.json не найден");
+      return res.json();
+    })
     .then(data=>{
       infoText.textContent = data.text || "";
     })
     .catch(err=>{
       log(`Не удалось загрузить info.json: ${err.message}`, "error");
+      infoText.textContent = "";
     });
 });
 
@@ -137,16 +145,14 @@ clearConsoleBtn.addEventListener("click", ()=>{
   localStorage.removeItem("serverLogs");
 });
 
-// Проверка доступности сайта через Image
+// Проверка доступности сайта через fetch
 function checkSiteFetch() {
   loader.style.display = "block";
   fetch(targetUrl, { method: "GET" })
     .then(response => {
-      if (!response.ok) {
-        throw new Error("Ошибка загрузки: " + response.status);
-      }
+      if (!response.ok) throw new Error("Ошибка загрузки: " + response.status);
       log("Сайт доступен. Код: " + response.status, "ok");
-      setTimeout(() => window.location.href = targetUrl, 3000);
+      setTimeout(()=>window.location.href = targetUrl, 3000);
     })
     .catch(err => {
       log("Сайт недоступен: " + err.message, "error");
@@ -161,7 +167,7 @@ connectBtn.addEventListener("click", ()=>{
   log("Проверка доступности сайта...");
   loadingDiv.classList.remove("hidden");
   errorDiv.classList.add("hidden");
-  checkSiteAvailability();
+  checkSiteFetch();
 });
 
 // Кнопка попробовать снова
@@ -170,7 +176,7 @@ retryBtn.addEventListener("click", ()=>{
   log("Повторная проверка доступности сайта...");
   loadingDiv.classList.remove("hidden");
   errorDiv.classList.add("hidden");
-  checkSiteAvailability();
+  checkSiteFetch();
 });
 </script>
 
