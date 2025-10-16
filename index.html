@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Перенаправление...</title>
+  <title>Проверка соединения...</title>
   <style>
     body {
       margin: 0;
       padding: 0;
       font-family: "Segoe UI", sans-serif;
-      background: #f2f4f8;
+      background: linear-gradient(135deg, #e0ecff, #f7f9fc);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -21,28 +21,49 @@
       text-align: center;
       background: white;
       padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
       max-width: 400px;
+      width: 90%;
+      transition: opacity 0.3s ease;
     }
 
     h1 {
-      font-size: 1.5em;
+      font-size: 1.6em;
       margin-bottom: 16px;
     }
 
     p {
       font-size: 1em;
+      color: #555;
     }
 
+    /* Красивая анимация загрузки */
     .loader {
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #3498db;
+      position: relative;
+      width: 60px;
+      height: 60px;
+      margin: 30px auto;
+    }
+
+    .loader::before,
+    .loader::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
+      border: 6px solid transparent;
+      border-top-color: #3498db;
+      animation: spin 1.2s linear infinite;
+    }
+
+    .loader::after {
+      border: 6px solid transparent;
+      border-bottom-color: #8bc34a;
+      animation-delay: 0.6s;
     }
 
     @keyframes spin {
@@ -53,45 +74,65 @@
     .hidden {
       display: none;
     }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
-  <div class="container" id="loading">
-    <h1>Перенаправляем вас…</h1>
+  <div class="container fade-in" id="loading">
+    <h1>Проверяем соединение…</h1>
     <div class="loader"></div>
-    <p>Пожалуйста, подождите…</p>
+    <p>Подождите, идёт проверка доступности сервера.</p>
   </div>
 
-  <div class="container hidden" id="error">
-    <h1>Упс!</h1>
-    <p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору.</p>
+  <div class="container hidden fade-in" id="error">
+    <h1>Ошибка соединения</h1>
+    <p>Не удалось подключиться к серверу.<br>Проверьте сеть или обратитесь к администратору.</p>
   </div>
 
-    <script>
+  <script>
     const targetUrl = "http://172.24.240.1:6808";
-  
-    fetch(targetUrl)
-      .then(response => {
-        if (!response.ok) {
-          // Если статус, например, 404, 500 и т.п.
-          throw new Error("Ошибка загрузки: " + response.status);
-        }
-        // Всё хорошо — перенаправляем
+    const timeout = 5000;
+
+    // Функция с таймаутом для fetch
+    function fetchWithTimeout(url, options, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          reject(new Error("Превышено время ожидания"));
+        }, timeoutMs);
+
+        fetch(url, options)
+          .then(response => {
+            clearTimeout(timer);
+            resolve(response);
+          })
+          .catch(err => {
+            clearTimeout(timer);
+            reject(err);
+          });
+      });
+    }
+
+    async function checkAndRedirect() {
+      try {
+        const response = await fetchWithTimeout(targetUrl, { method: "HEAD", mode: "no-cors" }, timeout);
+
+        // Даже если no-cors, проверим, что fetch не упал в ошибку
         window.location.href = targetUrl;
-      })
-      .catch(() => {
-        // При сетевой ошибке или статусе !== 2xx
+      } catch (error) {
         document.getElementById("loading").classList.add("hidden");
         document.getElementById("error").classList.remove("hidden");
-      });
-  
-    // Таймаут на случай зависания
-    setTimeout(() => {
-      document.getElementById("loading").classList.add("hidden");
-      document.getElementById("error").classList.remove("hidden");
-    }, 5000);
-  </script>
+      }
+    }
 
+    checkAndRedirect();
+  </script>
 </body>
 </html>
-
