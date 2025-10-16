@@ -67,27 +67,31 @@
     <p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору.</p>
   </div>
 
-  <script>
-    // Целевой адрес
+    <script>
     const targetUrl = "http://172.24.240.1:6808";
-
-    // Проверка доступности целевой страницы
-    fetch(targetUrl, { mode: "no-cors" }) // no-cors из-за политики CORS
-      .then(() => {
-        // Попытка перенаправления
+  
+    fetch(targetUrl)
+      .then(response => {
+        if (!response.ok) {
+          // Если статус, например, 404, 500 и т.п.
+          throw new Error("Ошибка загрузки: " + response.status);
+        }
+        // Всё хорошо — перенаправляем
         window.location.href = targetUrl;
       })
       .catch(() => {
-        // При ошибке — показать сообщение
+        // При сетевой ошибке или статусе !== 2xx
         document.getElementById("loading").classList.add("hidden");
         document.getElementById("error").classList.remove("hidden");
       });
-
-    // Дополнительная защита: если нет ответа в течение 5 секунд — показать ошибку
+  
+    // Таймаут на случай зависания
     setTimeout(() => {
       document.getElementById("loading").classList.add("hidden");
       document.getElementById("error").classList.remove("hidden");
     }, 5000);
   </script>
+
 </body>
 </html>
+
