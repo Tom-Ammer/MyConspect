@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Проверка соединения...</title>
   <style>
     body {
@@ -93,21 +93,18 @@
   </div>
 
   <div class="container hidden fade-in" id="error">
-    <h1>Ошибка соединения</h1>
-    <p>Не удалось подключиться к серверу.<br>Проверьте сеть или обратитесь к администратору.</p>
+    <h1>Ошибка 404</h1>
+    <p>Страница не найдена.<br>Обратитесь к администратору.</p>
   </div>
 
   <script>
     const targetUrl = "http://172.24.240.1:6808";
     const timeout = 5000;
 
-    // Функция с таймаутом для fetch
+    // Функция с таймаутом
     function fetchWithTimeout(url, options, timeoutMs) {
       return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          reject(new Error("Превышено время ожидания"));
-        }, timeoutMs);
-
+        const timer = setTimeout(() => reject(new Error("timeout")), timeoutMs);
         fetch(url, options)
           .then(response => {
             clearTimeout(timer);
@@ -122,14 +119,31 @@
 
     async function checkAndRedirect() {
       try {
-        const response = await fetchWithTimeout(targetUrl, { method: "HEAD", mode: "no-cors" }, timeout);
+        const response = await fetchWithTimeout(targetUrl, { method: "HEAD" }, timeout);
 
-        // Даже если no-cors, проверим, что fetch не упал в ошибку
-        window.location.href = targetUrl;
+        // Проверяем код ответа
+        if (response.ok) {
+          window.location.href = targetUrl;
+        } else if (response.status === 404) {
+          showError();
+        } else {
+          window.location.href = targetUrl; // например, 403 или 500 — всё равно пробуем
+        }
+
       } catch (error) {
-        document.getElementById("loading").classList.add("hidden");
-        document.getElementById("error").classList.remove("hidden");
+        // Если fetch не сработал (например, сеть), просто ничего не делаем — не показываем ошибку
+        // до таймаута 5 секунд
+        console.warn("Ошибка соединения или таймаут:", error.message);
       }
+    }
+
+    // Если через 5 секунд так и не ушли — показываем ошибку
+    const timer = setTimeout(() => showError(), timeout);
+
+    function showError() {
+      document.getElementById("loading").classList.add("hidden");
+      document.getElementById("error").classList.remove("hidden");
+      clearTimeout(timer);
     }
 
     checkAndRedirect();
