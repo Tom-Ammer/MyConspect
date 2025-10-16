@@ -1,199 +1,172 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Проверка соединения...</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Перенаправление...</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #e0ecff, #f7f9fc);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      color: #333;
+    :root{
+      --bg:#f2f4f8;
+      --card:#fff;
+      --text:#333;
+      --muted:#555;
+      --accent:#3498db;
+      --err:#e74c3c;
     }
-
-    .container {
-      text-align: center;
-      background: white;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-      max-width: 400px;
-      width: 90%;
+    html,body{height:100%;margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{height:100%;display:flex;align-items:center;justify-content:center}
+    .card{background:var(--card);padding:36px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.08);max-width:420px;width:92%;text-align:center}
+    h1{font-size:1.4rem;margin:0 0 12px}
+    p{margin:0;color:var(--muted)}
+    /* loader */
+    .loader{width:48px;height:48px;margin:18px auto;border-radius:50%;border:6px solid #f3f3f3;border-top-color:var(--accent);animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    .hidden{display:none}
+    /* console button (file icon) */
+    #consoleBtn{
+      position:fixed;top:14px;right:14px;width:44px;height:44px;padding:8px;border-radius:8px;border:none;background:transparent;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,0.08);backdrop-filter:blur(4px);
+      z-index:1000
     }
-
-    h1 {
-      font-size: 1.6em;
-      margin-bottom: 16px;
+    #consoleBtn svg{width:28px;height:28px;display:block;fill:var(--accent)}
+    /* console window */
+    #consoleWindow{
+      position:fixed;top:64px;right:14px;width:360px;max-width:calc(100% - 28px);height:220px;background:#0f1720;color:#dfe7ec;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;border-radius:10px;padding:10px;box-shadow:0 10px 40px rgba(0,0,0,0.25);overflow:auto;display:none;z-index:999
     }
-
-    p {
-      font-size: 1em;
-      color: #555;
-    }
-
-    .loader {
-      position: relative;
-      width: 60px;
-      height: 60px;
-      margin: 30px auto;
-    }
-
-    .loader::before,
-    .loader::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 6px solid transparent;
-      border-top-color: #3498db;
-      animation: spin 1.2s linear infinite;
-    }
-
-    .loader::after {
-      border-bottom-color: #8bc34a;
-      animation-delay: 0.6s;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    #consoleBtn {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      background: #3498db;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: background 0.3s;
-      z-index: 1000;
-    }
-
-    #consoleBtn:hover { background: #2176b8; }
-
-    #consoleWindow {
-      position: fixed;
-      top: 60px;
-      right: 20px;
-      width: 320px;
-      height: 180px;
-      background: #1e1e1e;
-      color: #dcdcdc;
-      font-family: monospace;
-      font-size: 13px;
-      border-radius: 8px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-      padding: 10px;
-      overflow-y: auto;
-      display: none;
-      z-index: 999;
-    }
-
-    #consoleWindow.visible { display: block; }
-
-    .log-entry { margin-bottom: 6px; border-left: 3px solid #3498db; padding-left: 6px; }
-    .log-error { border-left-color: #e74c3c; color: #ff9e9e; }
-    .log-ok { border-left-color: #2ecc71; color: #a6f3b1; }
+    #consoleWindow.visible{display:block}
+    .log{margin:6px 0;padding:6px;border-left:3px solid rgba(255,255,255,0.06)}
+    .log.time{color:#9fb3c8;font-size:12px}
+    .cmd{display:block;background:rgba(255,255,255,0.02);padding:8px;border-radius:6px}
+    .ok{color:#a6f3b1;border-left-color:#2ecc71}
+    .error{color:#ffb6b6;border-left-color:var(--err)}
+    .meta{font-size:12px;color:#9fb3c8;margin-top:6px}
+    /* error card */
+    .error-card h1{color:var(--err)}
   </style>
 </head>
 <body>
-  <button id="consoleBtn">Консоль</button>
-  <div id="consoleWindow"></div>
+  <button id="consoleBtn" title="Консоль (логи) — значок файла" aria-label="Консоль">
+    <!-- файл-иконка SVG (без текста) -->
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <path d="M14 2v6h6" fill="#fff" opacity="0.06"></path>
+    </svg>
+  </button>
 
-  <div class="container" id="loading">
-    <h1>Проверяем соединение…</h1>
-    <div class="loader"></div>
-    <p>Подождите, идёт проверка доступности сервера.</p>
-  </div>
+  <div id="consoleWindow" role="log" aria-live="polite"></div>
 
-  <div class="container hidden" id="error">
-    <h1>Ошибка</h1>
-    <p>Сервер не отвечает или страница не найдена.<br>Обратитесь к администратору.</p>
+  <div class="wrap">
+    <div class="card" id="loading">
+      <h1>Перенаправляем вас…</h1>
+      <div class="loader" aria-hidden="true"></div>
+      <p>Пожалуйста, подождите… (проверка доступности сервера — 5 секунд)</p>
+    </div>
+
+    <div class="card hidden error-card" id="error">
+      <h1>Упс!</h1>
+      <p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору.</p>
+    </div>
   </div>
 
   <script>
-    const targetUrl = "http://172.24.240.1:6808";
-    const timeout = 5000;
-    const consoleWindow = document.getElementById("consoleWindow");
-    const consoleBtn = document.getElementById("consoleBtn");
+    (function(){
+      const targetUrl = "http://172.24.240.1:6808";
+      const timeoutMs = 5000;
+      const loadingEl = document.getElementById("loading");
+      const errorEl = document.getElementById("error");
+      const consoleBtn = document.getElementById("consoleBtn");
+      const consoleWin = document.getElementById("consoleWindow");
 
-    consoleBtn.addEventListener("click", () => {
-      consoleWindow.classList.toggle("visible");
-    });
+      consoleBtn.addEventListener("click", () => consoleWin.classList.toggle("visible"));
 
-    function log(message, type = "info") {
-      const entry = document.createElement("div");
-      entry.classList.add("log-entry");
-      if (type === "error") entry.classList.add("log-error");
-      if (type === "ok") entry.classList.add("log-ok");
-      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-      consoleWindow.appendChild(entry);
-      consoleWindow.scrollTop = consoleWindow.scrollHeight;
-    }
+      function logEntry(text, type = "info", meta = "") {
+        const wrap = document.createElement("div");
+        wrap.className = "log";
+        if (type === "ok") wrap.classList.add("ok");
+        if (type === "error") wrap.classList.add("error");
 
-    function showError() {
-      document.getElementById("loading").classList.add("hidden");
-      document.getElementById("error").classList.remove("hidden");
-    }
+        const time = new Date().toLocaleTimeString();
+        const timeNode = document.createElement("div");
+        timeNode.className = "log time";
+        timeNode.textContent = `[${time}] ответ от сайта:`;
+        wrap.appendChild(timeNode);
 
-    async function checkAndRedirect() {
-      // Проверяем — если страница запущена через HTTPS
-      if (window.location.protocol === "https:") {
-        log("⚠️ Невозможно проверить HTTP-сервер с HTTPS-страницы. Откройте файл через HTTP или file://", "error");
-        showError();
-        return;
+        const cmd = document.createElement("div");
+        cmd.className = "cmd";
+        cmd.textContent = text;
+        wrap.appendChild(cmd);
+
+        if (meta) {
+          const metaNode = document.createElement("div");
+          metaNode.className = "meta";
+          metaNode.textContent = meta;
+          wrap.appendChild(metaNode);
+        }
+
+        consoleWin.appendChild(wrap);
+        consoleWin.scrollTop = consoleWin.scrollHeight;
       }
 
-      log(`Проверка соединения с ${targetUrl}...`);
-      const start = performance.now();
-      let timedOut = false;
-      const controller = new AbortController();
-
-      const timer = setTimeout(() => {
-        controller.abort();
-        timedOut = true;
-      }, timeout);
-
-      try {
-        const response = await fetch(targetUrl, { method: "HEAD", mode: "no-cors", signal: controller.signal });
-        clearTimeout(timer);
-
-        const time = Math.round(performance.now() - start);
-        if (!timedOut) {
-          log(`Сервер доступен (${time} мс) — выполняется переход`, "ok");
-          window.location.href = targetUrl;
-        }
-      } catch (error) {
-        clearTimeout(timer);
-        if (timedOut) {
-          log(`⏱ Превышено время ожидания (${timeout} мс)`, "error");
-        } else {
-          log(`❌ Ошибка соединения: ${error.message}`, "error");
-        }
-        showError();
+      function showError() {
+        loadingEl.classList.add("hidden");
+        errorEl.classList.remove("hidden");
       }
-    }
 
-    checkAndRedirect();
+      // основной поток: fetch как в твоём рабочем коде + таймаут 5s
+      (function tryFetchAndRedirect(){
+        const controller = new AbortController();
+        const signal = controller.signal;
+        let finished = false;
+
+        // таймер: по истечении 5 сек — прерываем и показываем ошибку
+        const t = setTimeout(() => {
+          if (finished) return;
+          finished = true;
+          controller.abort();
+          logEntry("Ошибка: превышено время ожидания (5 s).", "error", "Причина: таймаут запроса.");
+          showError();
+        }, timeoutMs);
+
+        // Выполняем fetch так же, как у тебя: без mode/no-cors — оставим поведение твоего рабочего примера
+        fetch(targetUrl, { signal })
+          .then(response => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(t);
+            // Логируем ответ сервера (если доступен)
+            try {
+              // response.status может быть доступен; если CORS мешает — будет TypeError / сетевой
+              const statusInfo = `HTTP ${response.status} ${response.statusText || ""}`.trim();
+              if (!response.ok) {
+                // Страница вернула код ошибки — показываем сообщение и лог
+                logEntry(statusInfo, "error", "Страница вернула ошибку (не 2xx).");
+                showError();
+              } else {
+                // Успех — лог и редирект
+                logEntry(statusInfo, "ok", "Успешный ответ — выполняется перенаправление.");
+                // Небольшая задержка, чтобы пользователь увидел лог (можно убрать)
+                setTimeout(() => { window.location.href = targetUrl; }, 150);
+              }
+            } catch (e) {
+              // если чтение response.status вызвало ошибку (CORS) — всё равно пробуем редирект
+              logEntry("Сервер ответил (не удалось прочитать статус из-за CORS). Перенаправление...", "ok", "CORS/ограничения браузера");
+              setTimeout(() => { window.location.href = targetUrl; }, 150);
+            }
+          })
+          .catch(err => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(t);
+            // Если fetch упал: покажем подробную ошибку в консоли и покажем ошибку на странице
+            // err.name может быть "AbortError" при принудительной отмене
+            const msg = (err && err.message) ? err.message : String(err);
+            logEntry(`Ошибка запроса: ${msg}`, "error", `Тип ошибки: ${err && err.name ? err.name : "unknown"}`);
+            showError();
+          });
+      })();
+
+    })();
   </script>
 </body>
 </html>
