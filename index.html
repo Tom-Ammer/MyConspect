@@ -148,14 +148,13 @@ clearConsoleBtn.addEventListener("click", ()=>{
 // Проверка доступности сайта через fetch
 function checkSiteFetch() {
   loader.style.display = "block";
-  fetch(targetUrl, { method: "GET" })
-    .then(response => {
-      if (!response.ok) throw new Error("Ошибка загрузки: " + response.status);
-      log("Сайт доступен. Код: " + response.status, "ok");
-      setTimeout(()=>window.location.href = targetUrl, 3000);
+  fetchWithTimeout(targetUrl, timeout)
+    .then(()=>{
+      log("Сервер доступен.", "ok");
+      setTimeout(()=>window.location.href=targetUrl, 3000);
     })
-    .catch(err => {
-      log("Сайт недоступен: " + err.message, "error");
+    .catch(err=>{
+      log(`Ошибка подключения: ${err.message}`, "error");
       loadingDiv.classList.add("hidden");
       errorDiv.classList.remove("hidden");
     });
