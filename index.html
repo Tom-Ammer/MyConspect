@@ -1,181 +1,109 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Перенаправление...</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", sans-serif;
-      background: #f2f4f8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      color: #333;
-    }
-
-    .container {
-      text-align: center;
-      background: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-      max-width: 400px;
-    }
-
-    h1 {
-      font-size: 1.5em;
-      margin-bottom: 16px;
-    }
-
-    p {
-      font-size: 1em;
-    }
-
-    .loader {
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #3498db;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    #consoleBtn {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      z-index: 1000;
-    }
-
-    #consoleBtn svg {
-      width: 30px;
-      height: 30px;
-      fill: #3498db;
-    }
-
-    #consoleWindow {
-      position: fixed;
-      top: 60px;
-      right: 20px;
-      width: 320px;
-      height: 180px;
-      background: #1e1e1e;
-      color: #dcdcdc;
-      font-family: monospace;
-      font-size: 13px;
-      border-radius: 8px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-      padding: 10px;
-      overflow-y: auto;
-      display: none;
-      z-index: 999;
-    }
-
-    #consoleWindow.visible { display: block; }
-
-    .log-entry { margin-bottom: 6px; border-left: 3px solid #3498db; padding-left: 6px; }
-    .log-error { border-left-color: #e74c3c; color: #ff9e9e; }
-    .log-ok { border-left-color: #2ecc71; color: #a6f3b1; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Перенаправление...</title>
+<style>
+body{margin:0;padding:0;font-family:"Segoe UI",sans-serif;background:#f2f4f8;display:flex;align-items:center;justify-content:center;height:100vh;color:#333}
+.container{text-align:center;background:white;padding:40px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.1);max-width:400px}
+h1{font-size:1.5em;margin-bottom:16px}
+p{font-size:1em}
+.loader{border:6px solid #f3f3f3;border-top:6px solid #3498db;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:20px auto}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.hidden{display:none}
+#consoleBtn{position:fixed;top:16px;right:16px;width:36px;height:36px;padding:6px;border:none;background:transparent;cursor:pointer;z-index:1000}
+#consoleBtn svg{width:28px;height:28px;fill:#3498db}
+#consoleWindow{position:fixed;top:60px;right:20px;width:360px;height:220px;background:#1e1e1e;color:#dcdcdc;font-family:monospace;font-size:13px;border-radius:8px;padding:10px;box-shadow:0 8px 25px rgba(0,0,0,0.3);overflow:auto;display:none;z-index:999}
+#consoleWindow.visible{display:block}
+.log-entry{margin-bottom:6px;border-left:3px solid #3498db;padding-left:6px}
+.log-error{border-left-color:#e74c3c;color:#ff9e9e}
+.log-ok{border-left-color:#2ecc71;color:#a6f3b1}
+#modeToggle{position:fixed;top:16px;right:60px;background:#3498db;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;z-index:1000}
+</style>
 </head>
 <body>
-  <button id="consoleBtn" title="Открыть консоль">
-    <svg viewBox="0 0 24 24">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <path d="M14 2v6h6"/>
-    </svg>
-  </button>
+<button id="consoleBtn" title="Консоль">
+<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+</button>
+<button id="modeToggle" title="Переключить режим проверки">Режим: fetch()</button>
+<div id="consoleWindow"></div>
 
-  <div id="consoleWindow"></div>
+<div class="container" id="loading">
+<h1>Перенаправляем вас…</h1>
+<div class="loader"></div>
+<p>Пожалуйста, подождите… (проверка доступности сервера — 5 секунд)</p>
+</div>
+<div class="container hidden" id="error">
+<h1>Упс!</h1>
+<p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору.</p>
+</div>
 
-  <div class="container" id="loading">
-    <h1>Перенаправляем вас…</h1>
-    <div class="loader"></div>
-    <p>Пожалуйста, подождите…</p>
-  </div>
+<script>
+const targetUrl="http://172.24.240.1:6808";
+const timeout=5000;
+const consoleBtn=document.getElementById("consoleBtn");
+const consoleWindow=document.getElementById("consoleWindow");
+const modeToggle=document.getElementById("modeToggle");
+const loadingEl=document.getElementById("loading");
+const errorEl=document.getElementById("error");
+let mode="fetch"; // fetch по умолчанию
 
-  <div class="container hidden" id="error">
-    <h1>Упс!</h1>
-    <p>Извините, конспекты пока не доступны.<br>Обратитесь к администратору.</p>
-  </div>
+consoleBtn.addEventListener("click",()=>consoleWindow.classList.toggle("visible"));
+modeToggle.addEventListener("click",()=>{
+  if(mode==="fetch"){mode="advanced";modeToggle.textContent="Режим: advanced"}else{mode="fetch";modeToggle.textContent="Режим: fetch()"}
+});
 
-  <script>
-    const targetUrl = "http://172.24.240.1:6808";
-    const timeout = 5000;
-    const consoleBtn = document.getElementById("consoleBtn");
-    const consoleWindow = document.getElementById("consoleWindow");
+function log(message,type="info"){
+  const entry=document.createElement("div");
+  entry.classList.add("log-entry");
+  if(type==="ok") entry.classList.add("log-ok");
+  if(type==="error") entry.classList.add("log-error");
+  entry.textContent=`[${new Date().toLocaleTimeString()}] ответ от сайта: ${message}`;
+  consoleWindow.appendChild(entry);
+  consoleWindow.scrollTop=consoleWindow.scrollHeight;
+}
 
-    consoleBtn.addEventListener("click", () => {
-      consoleWindow.classList.toggle("visible");
-    });
+function showError(){loadingEl.classList.add("hidden");errorEl.classList.remove("hidden");}
 
-    function log(message, type = "info") {
-      const entry = document.createElement("div");
-      entry.classList.add("log-entry");
-      if (type === "error") entry.classList.add("log-error");
-      if (type === "ok") entry.classList.add("log-ok");
-      entry.textContent = `[${new Date().toLocaleTimeString()}] ответ от сайта: ${message}`;
-      consoleWindow.appendChild(entry);
-      consoleWindow.scrollTop = consoleWindow.scrollHeight;
-    }
+function checkFetch(){
+  const controller=new AbortController();
+  const signal=controller.signal;
+  let finished=false;
+  const t=setTimeout(()=>{if(!finished){finished=true;controller.abort();log("Ошибка: время ожидания 5s","error");showError();}},timeout);
 
-    function showError() {
-      document.getElementById("loading").classList.add("hidden");
-      document.getElementById("error").classList.remove("hidden");
-    }
+  fetch(targetUrl,{signal})
+    .then(response=>{
+      if(finished) return;
+      finished=true; clearTimeout(t);
+      if(!response.ok){log(`HTTP ${response.status} ${response.statusText}`,"error");showError();}else{log(`HTTP ${response.status} ${response.statusText}`,"ok");setTimeout(()=>window.location.href=targetUrl,150);}
+    })
+    .catch(err=>{if(finished) return; finished=true; clearTimeout(t); log(`Ошибка запроса: ${err.message}`,"error");showError();});
+}
 
-    function checkServer() {
-      const img = new Image();
-      let done = false;
+function checkAdvanced(){
+  // попробуем fetch с no-cors
+  const controller=new AbortController();
+  const signal=controller.signal;
+  let finished=false;
+  const t=setTimeout(()=>{if(!finished){finished=true;controller.abort();log("Ошибка: время ожидания 5s","error");showError();}},timeout);
 
-      const timer = setTimeout(() => {
-        if (!done) {
-          done = true;
-          log("Ошибка: время ожидания истекло (5 секунд).", "error");
-          showError();
-        }
-      }, timeout);
+  fetch(targetUrl,{mode:"no-cors",signal})
+    .then(()=>{if(finished) return; finished=true; clearTimeout(t); log("Сервер доступен (fetch no-cors)","ok"); setTimeout(()=>window.location.href=targetUrl,150);})
+    .catch(()=>{if(finished) return; finished=true; clearTimeout(t); log("Сервер недоступен (fetch no-cors)","error"); showError();});
 
-      img.onload = function() {
-        if (!done) {
-          done = true;
-          clearTimeout(timer);
-          log("HTTP 200 OK — сервер доступен, выполняется переход.", "ok");
-          window.location.href = targetUrl;
-        }
-      };
+  // Image fallback
+  const img=new Image();
+  img.onload=function(){if(finished) return; finished=true; clearTimeout(t); log("Сервер доступен (Image)","ok"); setTimeout(()=>window.location.href=targetUrl,150);}
+  img.onerror=function(){if(finished) return; finished=true; clearTimeout(t); log("Сервер недоступен (Image)","error"); showError();}
+  img.src=targetUrl+"/favicon.ico?"+Date.now();
+}
 
-      img.onerror = function(e) {
-        if (!done) {
-          done = true;
-          clearTimeout(timer);
-          log("Ошибка загрузки: сервер недоступен или не отвечает.", "error");
-          showError();
-        }
-      };
+function checkServer(){
+  if(mode==="fetch") checkFetch(); else checkAdvanced();
+}
 
-      // проверяем сервер через изображение (обходит CORS)
-      img.src = targetUrl + "/favicon.ico?" + Date.now();
-    }
-
-    checkServer();
-  </script>
+checkServer();
+</script>
 </body>
 </html>
